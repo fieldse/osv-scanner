@@ -1,0 +1,10 @@
+# OS
+.DS_Store
+
+# Editor
+.vscode/
+.idea/
+*.swp
+
+# Logs / output
+*.log
