@@ -6,6 +6,9 @@
 .idea/
 *.swp
 
+# Claude
+.claude/settings.local.json
+
 # Logs / output
 *.log
 log/
