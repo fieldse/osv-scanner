@@ -29,3 +29,22 @@ The script prompts interactively. No arguments needed.
 - **Path Resolution**: The script uses the lockfile's directory for Docker mounting, not `$(pwd)` — this ensures it works regardless of where the lockfile lives relative to the working directory.
 - **Dependencies**: Docker and Bash are required.
 - **Single File**: The entire implementation is in `osv-scan.sh` — no build process, no config.
+
+## CRITICAL: No Host Package Installation
+
+**NEVER install Node packages, npm/yarn/pnpm dependencies, or any Node-related tooling on the host system.**
+
+This includes — but is not limited to — the following commands, which must NEVER be run on the host:
+
+```
+npm install
+npm ci
+yarn install
+yarn add
+pnpm install
+pnpm add
+npx <anything>
+node <anything>
+```
+
+All package operations happen exclusively inside the Docker container. The lockfile is mounted read-only into the container for scanning purposes only. The host system must remain free of any Node package installations at all times, no exceptions.
