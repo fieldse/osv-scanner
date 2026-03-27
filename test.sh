@@ -6,6 +6,8 @@ REPO_URL="https://github.com/OWASP/NodeGoat"
 REPO_DIR="./test-repo"
 SCRIPT="./osv-scan.sh"
 LOCKFILE="${REPO_DIR}/package-lock.json"
+LOG_DIR="./log"
+LOG_FILE="${LOG_DIR}/osv-scan-$(date +%Y%m%d-%H%M%S).txt"
 
 function info()  { echo "[INFO]  $*"; }
 function pass()  { echo "[PASS]  $*"; }
@@ -25,28 +27,21 @@ function setup_repo() {
 
 function run_scan() {
   info "Running osv-scan.sh against $LOCKFILE..."
+  info "Output → $LOG_FILE"
+  mkdir -p "$LOG_DIR"
 
-  OUTPUT="$("$SCRIPT" "$LOCKFILE" 2>&1)"
-  EXIT_CODE=$?
-
-  echo "$OUTPUT"
-  return $EXIT_CODE
+  # Tee to log file; OSV Scanner exits 1 on findings — capture without failing
+  "$SCRIPT" "$LOCKFILE" 2>&1 | tee "$LOG_FILE" || true
 }
 
 function assert_scan_ran() {
-  local output="$1"
-
-  echo "$output" | grep -q "Scanning:" \
+  grep -q "Scanning:" "$LOG_FILE" \
     || fail "Expected 'Scanning:' line not found in output"
   pass "Scanner started"
 }
 
 function assert_vulnerabilities_found() {
-  local output="$1"
-
-  # OSV Scanner exits non-zero and prints vuln details when findings exist.
-  # Accept either a vuln table or the OSV package name format.
-  if echo "$output" | grep -qiE "vulnerability|CVE-|GHSA-|OSV-"; then
+  if grep -qiE "vulnerability|CVE-[0-9]|GHSA-[0-9a-f]|OSV-[0-9]{4}-[0-9]" "$LOG_FILE"; then
     pass "Vulnerabilities reported"
   else
     info "No vulnerabilities detected (may be expected for updated lockfiles)"
@@ -59,13 +54,9 @@ function main() {
   [[ -x "$SCRIPT" ]] || fail "$SCRIPT not found or not executable"
 
   setup_repo
-
-  local output
-  # OSV Scanner exits 1 when vulns are found — capture output without failing
-  output="$(run_scan || true)"
-
-  assert_scan_ran "$output"
-  assert_vulnerabilities_found "$output"
+  run_scan
+  assert_scan_ran
+  assert_vulnerabilities_found
 
   pass "=== All checks passed ==="
 }

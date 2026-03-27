@@ -1,7 +1,11 @@
 {
   "permissions": {
     "allow": [
-      "Bash(chmod:*)"
+      "Bash(chmod:*)",
+      "Bash(./test.sh 2>&1)",
+      "Bash(gitleaks detect:*)",
+      "Bash(echo \"exit: $?\")",
+      "Bash(git push:*)"
     ]
   }
 }

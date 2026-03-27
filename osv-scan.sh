@@ -4,6 +4,10 @@ set -euo pipefail
 
 OSV_IMAGE="ghcr.io/google/osv-scanner"
 
+# Prefer podman, fall back to docker
+CONTAINER_CMD="$(command -v podman || command -v docker || true)"
+[[ -n "$CONTAINER_CMD" ]] || { echo "Error: podman or docker not found." >&2; exit 1; }
+
 function usage() {
   echo "Usage: $(basename "$0") [lockfile]"
   echo "  Scans a Node.js lockfile for known vulnerabilities using OSV Scanner."
@@ -41,7 +45,7 @@ function run_scan() {
 
   echo "Scanning: $abs"
 
-  docker run --rm \
+  "$CONTAINER_CMD" run --rm \
     -v "${dir}":/src \
     "$OSV_IMAGE" \
     --lockfile "/src/${name}"
