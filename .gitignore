@@ -12,5 +12,6 @@
 
 # Logs / output
 *.log
-log/
+log/*
+!log/.gitkeep
 test-repo/
