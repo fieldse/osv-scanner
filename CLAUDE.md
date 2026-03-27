@@ -8,43 +8,30 @@ Run a dependency vulnerability scan on a Node.js project using [OSV Scanner](htt
 
 ## How It Works
 
-The `osv-scan.sh` script:
+`osv-scan.sh`:
 1. Detects a lockfile in the current directory (`package-lock.json` preferred, falls back to `yarn.lock`)
-2. Prompts the user to confirm or override the detected lockfile
+2. Prompts the user to confirm or override the detected lockfile (skipped if path passed as argument)
 3. Resolves the absolute path of the lockfile and its parent directory
-4. Mounts the lockfile's directory into the `ghcr.io/google/osv-scanner` Docker container as `/src`
+4. Mounts the lockfile's directory into `ghcr.io/google/osv-scanner` as `/src`
 5. Runs OSV Scanner and outputs the vulnerability report
 
-## Usage
+## Files
+
+| File | Purpose |
+|------|---------|
+| `osv-scan.sh` | Main scanner script |
+| `test.sh` | Integration test — clones OWASP/NodeGoat and runs the scanner |
+
+## Running
 
 ```bash
-chmod +x osv-scan.sh
-./osv-scan.sh
+./osv-scan.sh                          # interactive, auto-detects lockfile
+./osv-scan.sh path/to/package-lock.json  # non-interactive
+./test.sh                              # run integration test
 ```
 
-The script prompts interactively. No arguments needed.
+## Key Constraints
 
-## Key Details
-
-- **Path Resolution**: The script uses the lockfile's directory for Docker mounting, not `$(pwd)` — this ensures it works regardless of where the lockfile lives relative to the working directory.
-- **Dependencies**: Docker and Bash are required.
-- **Single File**: The entire implementation is in `osv-scan.sh` — no build process, no config.
-
-## CRITICAL: No Host Package Installation
-
-**NEVER install Node packages, npm/yarn/pnpm dependencies, or any Node-related tooling on the host system.**
-
-This includes — but is not limited to — the following commands, which must NEVER be run on the host:
-
-```
-npm install
-npm ci
-yarn install
-yarn add
-pnpm install
-pnpm add
-npx <anything>
-node <anything>
-```
-
-All package operations happen exclusively inside the Docker container. The lockfile is mounted read-only into the container for scanning purposes only. The host system must remain free of any Node package installations at all times, no exceptions.
+- **Path resolution**: Docker volume mount uses the lockfile's directory, not `$(pwd)` — required for lockfiles outside the working directory.
+- **No host installs**: Never run `npm install`, `yarn install`, or any Node tooling on the host. All package operations stay inside the Docker container.
+- **Dependencies**: Docker and Bash only.
